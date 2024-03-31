@@ -1,5 +1,6 @@
 package ru.alexeyva.qrgenerator;
 
+import lombok.SneakyThrows;
 import net.fortuna.ical4j.model.*;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.component.VTimeZone;
@@ -9,24 +10,31 @@ import net.fortuna.ical4j.model.property.immutable.ImmutableCalScale;
 import net.fortuna.ical4j.model.property.immutable.ImmutableVersion;
 import net.fortuna.ical4j.util.RandomUidGenerator;
 import net.fortuna.ical4j.util.UidGenerator;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.nio.file.Files;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.concurrent.ThreadLocalRandom;
 
 @RestController
 public class Controller {
 
+    @SneakyThrows
     @GetMapping("/ics")
-    public ResponseEntity<byte[]> ics(@RequestParam(name = "delay", required = false) Integer daysDelay,
-                                      @RequestParam(name = "duration", required = false) Integer daysDuration,
-                                      @RequestParam(name = "step", required = false) Integer repeatEvery,
-                                      @RequestParam(name = "timezone", required = false) String tz,
-                                      @RequestParam(name = "summary", required = false) String summary){
+    public ResponseEntity<Resource> ics(@RequestParam(name = "delay", required = false) Integer daysDelay,
+                                        @RequestParam(name = "duration", required = false) Integer daysDuration,
+                                        @RequestParam(name = "step", required = false) Integer repeatEvery,
+                                        @RequestParam(name = "timezone", required = false) String tz,
+                                        @RequestParam(name = "summary", required = false) String summary){
 
         TimeZoneRegistry registry = TimeZoneRegistryFactory.getInstance().createRegistry();
         TimeZone timezone = tz == null ? registry.getTimeZone("Europe/Moscow") : registry.getTimeZone(tz);
@@ -61,7 +69,15 @@ public class Controller {
         calendar.add(event);
         //calendar.add(vTimeZone);
 
-        return ResponseEntity.ok(calendar.toString().getBytes());
+        File tempFile = File.createTempFile("pills"+ ThreadLocalRandom.current().nextInt(0,1000), ".ics");
+        tempFile.deleteOnExit();
+
+        Files.writeString(tempFile.toPath(), calendar.toString());
+        Resource fileResource = new FileSystemResource(tempFile);
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=" + fileResource.getFilename())
+                .body(fileResource);
     }
 
 }
