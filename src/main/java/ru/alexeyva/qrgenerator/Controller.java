@@ -59,7 +59,7 @@ public class Controller {
         calendar.add(ImmutableCalScale.GREGORIAN);
 
         calendar.add(event);
-        calendar.add(vTimeZone);
+        //calendar.add(vTimeZone);
 
         return ResponseEntity.ok(calendar.toString().getBytes());
     }
