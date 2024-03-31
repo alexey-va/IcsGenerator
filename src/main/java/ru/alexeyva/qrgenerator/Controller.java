@@ -67,7 +67,7 @@ public class Controller {
         calendar.add(ImmutableCalScale.GREGORIAN);
 
         calendar.add(event);
-        //calendar.add(vTimeZone);
+        calendar.add(vTimeZone);
 
         File tempFile = File.createTempFile("pills"+ ThreadLocalRandom.current().nextInt(0,1000), ".ics");
         tempFile.deleteOnExit();
@@ -77,6 +77,7 @@ public class Controller {
 
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=" + fileResource.getFilename())
+                .header("Content-Type", "text/calendar")
                 .body(fileResource);
     }
 
